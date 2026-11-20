@@ -1,0 +1,63 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: keycloak
+  namespace: otus-microservices-k8s-deployment-service-ingress-users
+  labels:
+    app: keycloak
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: keycloak
+  template:
+    metadata:
+      labels:
+        app: keycloak
+    spec:
+      containers:
+        - name: keycloak
+          image: playaru/keycloak-russian
+          args: [ "start" ]
+          env:
+            - name: KC_HOSTNAME_URL
+              value: "keycloak.homework"
+            - name: KC_HOSTNAME_ADMIN_URL
+              value: "keycloak.homework"
+            - name: KC_HOSTNAME_STRICT
+              value: "false"
+            - name: KC_HTTP_ENABLED
+              value: "true"
+            - name: KEYCLOAK_ADMIN
+              value: "keycloak"
+            - name: KEYCLOAK_ADMIN_PASSWORD
+              value: "keycloak"
+            #- name: KC_PROXY
+            #  value: "edge"
+            - name: KC_HEALTH_ENABLED
+              value: "true"
+            - name: KEYCLOAK_FRONTEND_URL
+              value: https://keycloak.homework:8080
+            - name: KC_DB
+              value: "postgres"
+            - name: KC_DB_URL
+              value: "jdbc:postgresql://pg-release-postgresql.otus-microservices-k8s-deployment-service-ingress-users.svc.cluster.local:5432/postgres"
+            - name: KC_DB_URL_DATABASE
+              value: "postgres"
+            - name: KC_DB_USERNAME
+              value: "postgres"
+            - name: KC_DB_PASSWORD
+              valueFrom:
+                secretKeyRef:
+                  name: postgres-credentials
+                  key: POSTGRES_PASSWORD  # Лучше не хранить пароль в открытом виде в values.yaml
+
+          ports:
+            - name: http
+              containerPort: 8080
+            - name: https
+              containerPort: 443
+          readinessProbe:
+            httpGet:
+              path: /realms/master
+              port: 8080

@@ -21,22 +21,63 @@ helm install db-test-release . -n otus-microservices-k8s-deployment-service-ingr
 6. Посмотреть список подов пространства имён otus-microservices-k8s-deployment-service-ingress-users при помощи команды
 kubectl get pods --namespace otus-microservices-k8s-deployment-service-ingress-users
 
-7. На одном из подов webapi-deployment-users выполнить port-forward командой
-kubectl --namespace otus-microservices-k8s-deployment-service-ingress-users port-forward <pod-name> 8080:8000
+7. При помощи kubectl создать секрет tls-credential из tls.crt и tls.key (были сгенерированы при помощи openssl)
 
-8. Выполнить команду
-minikube tunnel
+8. Подключить репозиторий Helm-чарта codecentric и обновить индекс:
+helm repo add codecentric https://codecentric.github.io/helm-charts
+helm repo update
 
 9. Выполнить команду
+#helm install keycloak-release codecentric/keycloak -f values.yaml -n keycloak --create-namespace --set postgresql.enabled=false
+#helm install keycloak-release codecentric/keycloak -f values.yaml -n otus-microservices-k8s-deployment-service-ingress-users --create-namespace --set postgresql.enabled=false --version 18.7.0 #26.1.0
+#helm install keycloak-release codecentric/keycloakx -f values.yaml -n otus-microservices-k8s-deployment-service-ingress-users --create-namespace --set postgresql.enabled=false --version 7.1.7
+#helm install keycloak-release . -f values.yaml -n otus-microservices-k8s-deployment-service-ingress-users --create-namespace
+helm install keycloak-release . -n otus-microservices-k8s-deployment-service-ingress-users --create-namespace
+#helm uninstall keycloak-release -n otus-microservices-k8s-deployment-service-ingress-users
+
+8. Проверка
+kubectl get pods -n otus-microservices-k8s-deployment-service-ingress-users
+kubectl get ingress -n otus-microservices-k8s-deployment-service-ingress-users
+
+9. Чтобы получить доступ к админ-панели, найдите внешний IP/хост сервиса и откройте в браузере https://<домен>. Если DNS ещё не настроен, используйте порт-форвард:
+
+kubectl port-forward service/keycloak 8080:80 -n keycloak
+kubectl port-forward keycloak-release-0  8080 -n keycloak
+kubectl port-forward keycloak-release-0  8080 -n otus-microservices-k8s-deployment-service-ingress-users
+
+Админ консоль
+http://127.0.0.1:8080/auth/admin/master/console
+
+10. Создать realm, client
+Настроить клиента.
+
+11. OAuth2-proxy
+
+helm repo add oauth2-proxy https://oauth2-proxy.github.io/manifests
+helm repo update
+
+#helm install oauth2-release oauth2-proxy/oauth2-proxy -n otus-microservices-k8s-deployment-service-ingress-users --create-namespace
+#helm install oauth2-release oauth2-proxy/oauth2-proxy -f values.yaml -n otus-microservices-k8s-deployment-service-ingress-users --create-namespace
+helm install oauth2-release . -n otus-microservices-k8s-deployment-service-ingress-users --create-namespace
+#helm uninstall oauth2-release -n otus-microservices-k8s-deployment-service-ingress-users
+#kubectl -n otus-microservices-k8s-deployment-service-ingress-users get pods
+
+12. На одном из подов webapi-deployment-users выполнить port-forward командой
+kubectl --namespace otus-microservices-k8s-deployment-service-ingress-users port-forward <pod-name> 8080:8000
+
+13. Выполнить команду
+minikube tunnel
+
+14. Выполнить команду
 minikube addons enable ingress
 
-10. Перейти в каталог postman
+15. Перейти в каталог postman
 
-11. Выполнить команду
+16. Выполнить команду
 newman run Otus.postman_collection.json -e OtusUsersApiEnvironment.postman_environment.json
 
 
 
 -----------------
 
-helm install nginx ingress-nginx/ingress-nginx --namespace otus-microservices-k8s-deployment-service-ingress-users  -f e:\dev\users-api-k8s-helm\nginx_ingress.yaml --create-namespace
+#helm install nginx ingress-nginx/ingress-nginx --namespace otus-microservices-k8s-deployment-service-ingress-users  -f e:\dev\users-api-k8s-helm\nginx_ingress.yaml --create-namespace

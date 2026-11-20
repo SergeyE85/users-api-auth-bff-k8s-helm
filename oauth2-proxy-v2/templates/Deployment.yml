@@ -1,0 +1,48 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  labels:
+    app: oauth2-proxy
+  name: oauth2-proxy
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: oauth2-proxy
+  template:
+    metadata:
+      labels:
+        app: oauth2-proxy
+    spec:
+      containers:
+        - name: oauth2-proxy
+          image: quay.io/oauth2-proxy/oauth2-proxy:latest
+          imagePullPolicy: Always
+          ports:
+            - containerPort: 4180
+              protocol: TCP
+          args:
+            - --provider=keycloak-oidc
+            - --upstream=file:///dev/null
+            - --http-address=0.0.0.0:4180
+            - --whitelist-domain=keycloak.homework
+            - --cookie-domain=keycloak.homework
+            - --set-xauthrequest=true
+            - --reverse-proxy=true
+            - --set-authorization-header=true
+            - --oidc-issuer-url=https://keycloak.homework:443/realms/users-api
+            #- --oidc-issuer-url=https://keycloak.homework:8080/realms/users-api
+            #- --skipOpenidProviderTlsVerify=true
+            - --redirect-url=http://keycloak.homework:4180/oauth2/callback
+            - --ssl-insecure-skip-verify=true
+            #- --insecure-oidc-skip-issuer-verification=true
+            #- --skip-openid-provider-tls-verify
+            - --silence-ping-logging=true
+            - --email-domain=*
+          env:
+            - name: OAUTH2_PROXY_CLIENT_ID
+              value: users-api-client
+            - name: OAUTH2_PROXY_CLIENT_SECRET
+              value: ghwiz7FEbB3bj1UhQYal3aunyBp0SYq0
+            - name: OAUTH2_PROXY_COOKIE_SECRET
+              value: XwRhE-MRxbn6H9tGzicSRr5Ri2U5-8dirqQZnnq-SBA=
